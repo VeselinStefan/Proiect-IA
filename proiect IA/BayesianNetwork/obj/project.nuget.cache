@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "m3gWPN423+M=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\Dario\\Desktop\\proiect IA\\BayesianNetwork\\BayesianNetwork.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Dario\\.nuget\\packages\\newtonsoft.json\\13.0.3\\newtonsoft.json.13.0.3.nupkg.sha512"
+  ],
+  "logs": []
+}
