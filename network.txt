@@ -1,0 +1,13 @@
+Gripa: Da=10, Nu=90
+Abces: Da=5, Nu=95
+Febra:
+  Gripa=Da,Abces=Da: Da=80, Nu=20
+  Gripa=Da,Abces=Nu: Da=70, Nu=30
+  Gripa=Nu,Abces=Da: Da=25, Nu=75
+  Gripa=Nu,Abces=Nu: Da=5, Nu=95
+Oboseala:
+  Febra=Da: Da=60, Nu=40
+  Febra=Nu: Da=20, Nu=80
+Anorexie:
+  Febra=Da: Da=50, Nu=50
+  Febra=Nu: Da=10, Nu=90
