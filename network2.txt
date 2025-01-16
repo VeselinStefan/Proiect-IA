@@ -1,0 +1,20 @@
+Infectie: Da=15, Nu=85
+Alergie: Da=20, Nu=80
+Tuse:
+  Infectie=Da,Alergie=Da: Da=85, Nu=15
+  Infectie=Da,Alergie=Nu: Da=70, Nu=30
+  Infectie=Nu,Alergie=Da: Da=50, Nu=50
+  Infectie=Nu,Alergie=Nu: Da=10, Nu=90
+Temperatura:
+  Infectie=Da: Ridicata=60, Normala=40
+  Infectie=Nu: Ridicata=20, Normala=80
+RespiratieDificila:
+  Tuse=Da: Da=75, Nu=25
+  Tuse=Nu: Da=10, Nu=90
+Oboseala:
+  Tuse=Da,Temperatura=Ridicata: Da=80, Nu=20
+  Tuse=Da,Temperatura=Normala: Da=60, Nu=40
+  Tuse=Nu,Temperatura=Ridicata: Da=50, Nu=50
+  Tuse=Nu,Temperatura=Normala: Da=20, Nu=80
+
+  
