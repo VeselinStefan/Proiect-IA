@@ -11,10 +11,10 @@ class BayesianNetwork
     // Citirea rețelei bayesiene din fișier
     public static void LoadNetwork(string filePath)
     {
-        var lines = File.ReadAllLines(filePath);
+        var read = File.ReadAllLines(filePath);
         string currentNode = null;
 
-        foreach (var line in lines)
+        foreach (var line in read)
         {
             if (line.Contains(":") && !line.Contains("=")) 
             {
@@ -44,7 +44,6 @@ class BayesianNetwork
         }
     }
 
-   
     public static double JointProbability(Dictionary<string, string> evidence)
     {
         double probability = 1.0;
@@ -66,7 +65,6 @@ class BayesianNetwork
                 probability *= ConditionalProbabilities[node][parentValues][evidence[node]]*0.01;
             }
         }
-
         return probability;
     }
 
@@ -86,7 +84,6 @@ class BayesianNetwork
 
             totalProbability += JointProbability(fullEvidence);
         }
-
         return totalProbability;
     }
 
@@ -105,11 +102,10 @@ class BayesianNetwork
             }
             combinations.Add(combination);
         }
-
         return combinations;
     }
 
-    public static void DisplayNetwork()
+    public static void Afisare()
     {
         Console.WriteLine("=== Bayesian Network ===");
 
@@ -120,7 +116,7 @@ class BayesianNetwork
             Console.WriteLine($"  {node.Key}:");
             foreach (var prob in node.Value)
             {
-                Console.WriteLine($"    {prob.Key} = {prob.Value}");
+                Console.WriteLine($"    {prob.Key} = {prob.Value*0.01}");
             }
         }
 
@@ -134,7 +130,7 @@ class BayesianNetwork
                 Console.WriteLine($"    Conditie: {condition.Key}");
                 foreach (var prob in condition.Value)
                 {
-                    Console.WriteLine($"      {prob.Key} = {prob.Value}");
+                    Console.WriteLine($"      {prob.Key} = {prob.Value*0.01}");
                 }
             }
         }
@@ -164,29 +160,28 @@ class BayesianNetwork
                 }
             }
         }
-
         return evidences;
     }
 
     static void Main(string[] args)
     {
         Console.WriteLine("Loading Bayesian Network...");
-        LoadNetwork("network.txt");
+        LoadNetwork("retea.txt");
         Console.WriteLine("\nDisplaying Bayesian Network:");
-        DisplayNetwork();
+        Afisare();
         Console.WriteLine("\nIntroduceti evidentele pentru calcul:");
         var evidences = ReadEvidences();
 
         Console.WriteLine("Introduceti variabila si valoarea de interogat (ex: Oboseala=Da):");
-        var query = Console.ReadLine();
-        var queryParts = query.Split('=');
-        if (queryParts.Length == 2)
+        var read = Console.ReadLine();
+        var Parts = read.Split('=');
+        if (Parts.Length == 2)
         {
-            var queryNode = queryParts[0].Trim();
-            var queryValue = queryParts[1].Trim();
+            var Node = Parts[0].Trim();
+            var Value = Parts[1].Trim();
 
-            double result = MarginalProbability(queryNode, queryValue, evidences);
-            Console.WriteLine($"\nP({queryNode} = {queryValue} | evidences) = {result}");
+            double result = MarginalProbability(Node, Value, evidences);
+            Console.WriteLine($"\nP({Node} = {Value} | evidences) = {result}");
         }
         else
         {
