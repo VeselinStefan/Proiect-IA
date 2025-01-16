@@ -138,7 +138,7 @@ class BayesianNetwork
     public static Dictionary<string, string> ReadEvidences()
     {
         var evidences = new Dictionary<string, string>();
-        Console.WriteLine("Introduceti evidentele (ex: Gripa=Nu, Abces=Da):");
+        Console.WriteLine("Introduceti evidentele (ex: \"Gripa=Nu, Abces=Da\"):");
         string input = Console.ReadLine();
 
         if (!string.IsNullOrWhiteSpace(input))
@@ -168,7 +168,7 @@ class BayesianNetwork
         string filePath = null;
         while (true)
         {
-            Console.WriteLine("Introduceti calea catre fisierul retelei bayesiene (ex: network.txt):");
+            Console.WriteLine("Introduceti calea catre fisierul retelei bayesiene (ex: \"retea.txt\"):");
             filePath = Console.ReadLine();
 
             if (File.Exists(filePath))
@@ -213,7 +213,7 @@ class BayesianNetwork
                     Console.WriteLine("Evidentele au fost actualizate.");
                     break;
                 case "3":
-                    Console.WriteLine("Introduceti variabila si valoarea de interogat (ex: Oboseala=Da):");
+                    Console.WriteLine("Introduceti variabila si valoarea de interogat (ex: \"Oboseala=Da\"):");
                     var read = Console.ReadLine();
                     var Parts = query.Split('=');
                     if (Parts.Length == 2)
