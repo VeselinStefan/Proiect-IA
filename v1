@@ -5,123 +5,192 @@ using System.Linq;
 
 class BayesianNetwork
 {
-    private static Dictionary<string, Node> Nodes;
+    private static Dictionary<string, Dictionary<string, double>> MarginalProbabilities = new Dictionary<string, Dictionary<string, double>>();
+    private static Dictionary<string, Dictionary<string, Dictionary<string, double>>> ConditionalProbabilities = new Dictionary<string, Dictionary<string, Dictionary<string, double>>>();
 
-    // Structura unui nod din rețea
-    public class Node
-    {
-        public string Name { get; set; }
-        public List<string> Parents { get; set; } = new List<string>();
-        public Dictionary<string, double> Probabilities { get; set; } = new Dictionary<string, double>();
-
-        public override string ToString()
-        {
-            var parents = Parents.Count > 0 ? string.Join(", ", Parents) : "None";
-            var probabilities = string.Join("\n", Probabilities.Select(p => $"  {p.Key} = {p.Value}"));
-            return $"Node: {Name}\nParents: {parents}\nProbabilities:\n{probabilities}\n";
-        }
-
-    }
-
-    // Citirea rețelei bayesiene dintr-un fișier text
-    public static void LoadNetworkFromTextFile(string filePath)
+    // Citirea rețelei bayesiene din fișier
+    public static void LoadNetwork(string filePath)
     {
         var lines = File.ReadAllLines(filePath);
-        Nodes = new Dictionary<string, Node>();
-
-        Node currentNode = null;
+        string currentNode = null;
 
         foreach (var line in lines)
         {
-            if (string.IsNullOrWhiteSpace(line))
-                continue;
+            if (line.Contains(":") && !line.Contains("=")) 
+            {
+                currentNode = line.Split(':')[0].Trim();
+                if (!ConditionalProbabilities.ContainsKey(currentNode))
+                    ConditionalProbabilities[currentNode] = new Dictionary<string, Dictionary<string, double>>();
+            }
+            else if (line.Contains(":")) 
+            {
+                var parts = line.Split(':');
+                var condition = parts[0].Trim();
+                var probabilities = parts[1].Trim().Split(',').ToDictionary(
+                    p => p.Split('=')[0].Trim(),
+                    p => double.Parse(p.Split('=')[1].Trim())
+                );
 
-            if (line.StartsWith("Node:"))
-            {
-                // Începem un nod nou
-                var nodeName = line.Split(':')[1].Trim();
-                currentNode = new Node { Name = nodeName };
-                Nodes[nodeName] = currentNode;
+                if (currentNode != null && ConditionalProbabilities.ContainsKey(currentNode))
+                {
+                    ConditionalProbabilities[currentNode][condition] = probabilities;
+                }
+                else
+                {
+                    currentNode = line.Split(':')[0].Trim();
+                    MarginalProbabilities[currentNode] = probabilities;
+                }
             }
-            else if (line.StartsWith("Parents:"))
-            {
-                // Setăm părinții
-                var parents = line.Split(':')[1].Trim();
-                currentNode.Parents = parents == "None" ? new List<string>() : parents.Split(',').Select(p => p.Trim()).ToList();
-            }
-            else if (line.StartsWith("Probabilities:"))
-            {
-                // Următoarele linii sunt probabilități
-                continue;
-            }
-            else if (currentNode != null)
-            {
-                // Citim o probabilitate
-                var parts = line.Split('=');
-                var key = parts[0].Trim();
-                var value = double.Parse(parts[1].Trim());
-                currentNode.Probabilities[key] = value / 10;
-            }
-          
         }
     }
 
-    // Calculul probabilității comune
-    public static double JointProbability(Dictionary<string, string> evidences)
+   
+    public static double JointProbability(Dictionary<string, string> evidence)
     {
         double probability = 1.0;
 
-       
-        foreach (var node in Nodes.Values)
+        foreach (var node in MarginalProbabilities.Keys.Concat(ConditionalProbabilities.Keys))
         {
-            // Folosim doar nodurile relevante: Gripa, Abces, Anorexie
-            if (!evidences.ContainsKey(node.Name))
-                continue;
-
-            var parentValues = node.Parents.Select(p => evidences.ContainsKey(p) ? evidences[p] : "UNKNOWN").ToArray();
-            var key = parentValues.Length > 0 ? string.Join(",", parentValues) + $":{evidences[node.Name]}" : evidences[node.Name];
-
-            Console.WriteLine($"Cheie construită: {key}");
-
-            if (!node.Probabilities.ContainsKey(key))
+            if (MarginalProbabilities.ContainsKey(node)) 
             {
-                Console.WriteLine($"Eroare: cheia '{key}' nu există în tabelul de probabilități al nodului '{node.Name}'.");
-                throw new KeyNotFoundException($"Cheia '{key}' lipsește pentru nodul '{node.Name}'.");
+                probability *= MarginalProbabilities[node][evidence[node]]*0.01;
             }
+            else if (ConditionalProbabilities.ContainsKey(node)) 
+            {
+                var parentValues = string.Join(",", ConditionalProbabilities[node].Keys.First().Split(',').Select(kv =>
+                {
+                    var parts = kv.Split('=');
+                    return $"{parts[0]}={evidence[parts[0]]}";
+                }));
 
-            probability *= node.Probabilities[key];
-
+                probability *= ConditionalProbabilities[node][parentValues][evidence[node]]*0.01;
+            }
         }
 
         return probability;
     }
 
+    
+    public static double MarginalProbability(string queryNode, string queryValue, Dictionary<string, string> evidence)
+    {
+        var allVariables = MarginalProbabilities.Keys.Concat(ConditionalProbabilities.Keys).ToList();
+        var unknownVariables = allVariables.Except(evidence.Keys.Append(queryNode)).ToList();
+        var combinations = GenerateCombinations(unknownVariables);
 
+        double totalProbability = 0.0;
+        foreach (var combination in combinations)
+        {
+            var fullEvidence = new Dictionary<string, string>(evidence) { [queryNode] = queryValue };
+            foreach (var kvp in combination)
+                fullEvidence[kvp.Key] = kvp.Value;
 
+            totalProbability += JointProbability(fullEvidence);
+        }
+
+        return totalProbability;
+    }
+
+    private static List<Dictionary<string, string>> GenerateCombinations(List<string> variables)
+    {
+        var values = new[] { "Da", "Nu" };
+        var combinations = new List<Dictionary<string, string>>();
+
+        int totalCombinations = (int)Math.Pow(2, variables.Count);
+        for (int i = 0; i < totalCombinations; i++)
+        {
+            var combination = new Dictionary<string, string>();
+            for (int j = 0; j < variables.Count; j++)
+            {
+                combination[variables[j]] = values[(i >> j) & 1];
+            }
+            combinations.Add(combination);
+        }
+
+        return combinations;
+    }
+
+    public static void DisplayNetwork()
+    {
+        Console.WriteLine("=== Bayesian Network ===");
+
+        
+        Console.WriteLine("Noduri fara parinti (Probabilitati marginale):");
+        foreach (var node in MarginalProbabilities)
+        {
+            Console.WriteLine($"  {node.Key}:");
+            foreach (var prob in node.Value)
+            {
+                Console.WriteLine($"    {prob.Key} = {prob.Value}");
+            }
+        }
+
+       
+        Console.WriteLine("\nNoduri cu parinti (Probabilitati conditionate):");
+        foreach (var node in ConditionalProbabilities)
+        {
+            Console.WriteLine($"  {node.Key}:");
+            foreach (var condition in node.Value)
+            {
+                Console.WriteLine($"    Conditie: {condition.Key}");
+                foreach (var prob in condition.Value)
+                {
+                    Console.WriteLine($"      {prob.Key} = {prob.Value}");
+                }
+            }
+        }
+    }
+
+    public static Dictionary<string, string> ReadEvidences()
+    {
+        var evidences = new Dictionary<string, string>();
+        Console.WriteLine("Introduceti evidentele (ex: Gripa=Nu, Abces=Da):");
+        string input = Console.ReadLine();
+
+        if (!string.IsNullOrWhiteSpace(input))
+        {
+            var pairs = input.Split(',');
+            foreach (var pair in pairs)
+            {
+                var parts = pair.Split('=');
+                if (parts.Length == 2)
+                {
+                    var variable = parts[0].Trim();
+                    var value = parts[1].Trim();
+                    evidences[variable] = value;
+                }
+                else
+                {
+                    Console.WriteLine($"Format invalid: {pair}. Ignorat.");
+                }
+            }
+        }
+
+        return evidences;
+    }
 
     static void Main(string[] args)
     {
-        Console.WriteLine("Încărcăm rețeaua bayesiană din fișierul text...");
-        LoadNetworkFromTextFile("retea.txt");
-        foreach (var node in Nodes.Values)
+        Console.WriteLine("Loading Bayesian Network...");
+        LoadNetwork("network.txt");
+        Console.WriteLine("\nDisplaying Bayesian Network:");
+        DisplayNetwork();
+        Console.WriteLine("\nIntroduceti evidentele pentru calcul:");
+        var evidences = ReadEvidences();
+
+        Console.WriteLine("Introduceti variabila si valoarea de interogat (ex: Oboseala=Da):");
+        var query = Console.ReadLine();
+        var queryParts = query.Split('=');
+        if (queryParts.Length == 2)
         {
-            Console.WriteLine(node);
+            var queryNode = queryParts[0].Trim();
+            var queryValue = queryParts[1].Trim();
+
+            double result = MarginalProbability(queryNode, queryValue, evidences);
+            Console.WriteLine($"\nP({queryNode} = {queryValue} | evidences) = {result}");
         }
-
-        Console.WriteLine("Calculăm probabilitatea marginală pentru Oboseala:");
-        var evidences = new Dictionary<string, string>
+        else
         {
-            { "Gripa", "Nu" },
-            { "Abces", "Nu" },
-            { "Anorexie", "Nu" }
-        };      
-
-        double result = JointProbability(evidences);
-
-        Console.WriteLine("P(Oboseala = Da | Gripa = Nu, Abces = Nu, Anorexie = Nu) = " + result);
-
-        // Exemplu: afișare detalii complete pentru fiecare nod
-        Console.WriteLine("\nDetalii complete despre fiecare nod:");
-        
+            Console.WriteLine("Format invalid pentru interogare.");
+        }
     }
 }
