@@ -8,7 +8,6 @@ class BayesianNetwork
     private static Dictionary<string, Dictionary<string, double>> MarginalProbabilities = new Dictionary<string, Dictionary<string, double>>();
     private static Dictionary<string, Dictionary<string, Dictionary<string, double>>> ConditionalProbabilities = new Dictionary<string, Dictionary<string, Dictionary<string, double>>>();
 
-    // Citirea rețelei bayesiene din fișier
     public static void LoadNetwork(string filePath)
     {
         var lines = File.ReadAllLines(filePath);
@@ -70,20 +69,18 @@ class BayesianNetwork
         return probability;
     }
 
-
-    public static double MarginalProbability(string queryNode, string queryValue, Dictionary<string, string> evidence)
+    public static double MarginalProbability(string qNode, string qValue, Dictionary<string, string> evidence)
     {
-        var allVariables = MarginalProbabilities.Keys.Concat(ConditionalProbabilities.Keys).ToList();
-        var unknownVariables = allVariables.Except(evidence.Keys.Append(queryNode)).ToList();
+        var totalVariables = MarginalProbabilities.Keys.Concat(ConditionalProbabilities.Keys).ToList();
+        var unknownVariables = totalVariables.Except(evidence.Keys.Append(qNode)).ToList();
         var combinations = GenerateCombinations(unknownVariables);
 
         double totalProbability = 0.0;
         foreach (var combination in combinations)
         {
-            var fullEvidence = new Dictionary<string, string>(evidence) { [queryNode] = queryValue };
+            var fullEvidence = new Dictionary<string, string>(evidence) { [qNode] = qValue };
             foreach (var kvp in combination)
                 fullEvidence[kvp.Key] = kvp.Value;
-
             totalProbability += JointProbability(fullEvidence);
         }
 
@@ -109,21 +106,19 @@ class BayesianNetwork
         return combinations;
     }
 
-    public static void DisplayNetwork()
+    public static void Afisare()
     {
         Console.WriteLine("=== Bayesian Network ===");
-
 
         Console.WriteLine("Noduri fara parinti (Probabilitati marginale):");
         foreach (var node in MarginalProbabilities)
         {
-            Console.WriteLine($"  {node.Key}:");
+            Console.WriteLine($"{node.Key}:");
             foreach (var prob in node.Value)
             {
-                Console.WriteLine($"    {prob.Key} = {prob.Value}");
+                Console.WriteLine($" {prob.Key} = {prob.Value}");
             }
         }
-
 
         Console.WriteLine("\nNoduri cu parinti (Probabilitati conditionate):");
         foreach (var node in ConditionalProbabilities)
@@ -164,19 +159,16 @@ class BayesianNetwork
                 }
             }
         }
-
         return evidences;
     }
 
     static void Main(string[] args)
     {
         Console.WriteLine("=== Bayesian Network Program ===");
-
         string filePath = null;
-
         while (true)
         {
-            Console.WriteLine("Introduceți calea către fișierul rețelei bayesiene (ex: network.txt):");
+            Console.WriteLine("Introduceti calea catre fisierul retelei bayesiene (ex: network.txt):");
             filePath = Console.ReadLine();
 
             if (File.Exists(filePath))
@@ -184,17 +176,17 @@ class BayesianNetwork
                 try
                 {
                     LoadNetwork(filePath);
-                    Console.WriteLine("\nRețeaua bayesiană a fost încărcată cu succes din fișierul: " + filePath);
+                    Console.WriteLine("\nReteaua bayesiana a fost incarcata cu succes din fisierul: " + filePath);
                     break;
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("Eroare la încărcarea fișierului: " + ex.Message);
+                    Console.WriteLine("Eroare la incarcarea fisierului: " + ex.Message);
                 }
             }
             else
             {
-                Console.WriteLine("Fișierul specificat nu există. Vă rugăm să introduceți o cale validă.");
+                Console.WriteLine("Fisierul specificat nu exista. Va rugam sa introduceti o cale valida.");
             }
         }
 
@@ -203,36 +195,34 @@ class BayesianNetwork
         while (true)
         {
             Console.WriteLine("\n=== Meniu ===");
-            Console.WriteLine("1. Afișare rețea bayesiană");
-            Console.WriteLine("2. Modificare evidențe");
-            Console.WriteLine("3. Interogare probabilitate marginală");
-            Console.WriteLine("4. Schimbare fișier rețea");
-            Console.WriteLine("5. Ieșire");
-            Console.Write("Alege o opțiune: ");
+            Console.WriteLine("1. Afisare retea bayesiana");
+            Console.WriteLine("2. Modificare evidente");
+            Console.WriteLine("3. Interogare probabilitate marginala");
+            Console.WriteLine("4. Schimbare fisier retea");
+            Console.WriteLine("5. Iesire");
+            Console.Write("Alege o optiune: ");
             var option = Console.ReadLine();
 
             switch (option)
             {
                 case "1":
-                    DisplayNetwork();
+                    Afisare();
                     break;
-
                 case "2":
                     evidences = ReadEvidences();
-                    Console.WriteLine("Evidențele au fost actualizate.");
+                    Console.WriteLine("Evidentele au fost actualizate.");
                     break;
-
                 case "3":
-                    Console.WriteLine("Introduceți variabila și valoarea de interogat (ex: Oboseala=Da):");
-                    var query = Console.ReadLine();
-                    var queryParts = query.Split('=');
-                    if (queryParts.Length == 2)
+                    Console.WriteLine("Introduceti variabila si valoarea de interogat (ex: Oboseala=Da):");
+                    var read = Console.ReadLine();
+                    var Parts = query.Split('=');
+                    if (Parts.Length == 2)
                     {
-                        var queryNode = queryParts[0].Trim();
-                        var queryValue = queryParts[1].Trim();
+                        var Node = Parts[0].Trim();
+                        var Value = Parts[1].Trim();
 
-                        double result = MarginalProbability(queryNode, queryValue, evidences);
-                        Console.WriteLine($"\nP({queryNode} = {queryValue} | evidences) = {result}");
+                        double result = MarginalProbability(Node, Value, evidences);
+                        Console.WriteLine($"\nP({Node} = {Value} | evidences) = {result}");
                     }
                     else
                     {
@@ -241,7 +231,7 @@ class BayesianNetwork
                     break;
 
                 case "4":
-                    Console.WriteLine("Introduceți noua cale către fișierul rețelei bayesiene:");
+                    Console.WriteLine("Introduceti noua cale catre fisierul retelei bayesiene:");
                     var newFilePath = Console.ReadLine();
 
                     if (File.Exists(newFilePath))
@@ -250,26 +240,24 @@ class BayesianNetwork
                         {
                             LoadNetwork(newFilePath);
                             filePath = newFilePath;
-                            Console.WriteLine("\nRețeaua bayesiană a fost reîncărcată din noul fișier.");
+                            Console.WriteLine("\Reteaua bayesiana a fost reincarcata din noul fisier.");
                             evidences.Clear(); // Reset evidences if a new network is loaded
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine("Eroare la încărcarea fișierului: " + ex.Message);
+                            Console.WriteLine("Eroare la incarcarea fisierului: " + ex.Message);
                         }
                     }
                     else
                     {
-                        Console.WriteLine("Fișierul specificat nu există. Vă rugăm să introduceți o cale validă.");
+                        Console.WriteLine("Fisierul specificat nu exista. Va rugma sa introduceti o cale valida.");
                     }
                     break;
-
                 case "5":
-                    Console.WriteLine("Ieșire...");
+                    Console.WriteLine("Iesire...");
                     return;
-
                 default:
-                    Console.WriteLine("Opțiune invalidă. Vă rugăm să încercați din nou.");
+                    Console.WriteLine("Optiune invalida. Va rugam sa incercati din nou.");
                     break;
             }
         }
